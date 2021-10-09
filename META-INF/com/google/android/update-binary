@@ -1,0 +1,43 @@
+#!/sbin/sh
+OUTFD=/proc/self/fd/$2;
+ZIPFILE="$3";
+CACHE=/tmp/BPF-BYPASS
+ui_print() {
+  until [ ! "$1" ]; do
+    echo -e "ui_print $1\nui_print" > $OUTFD;
+    shift;
+  done;
+}
+
+ui_print " "
+ui_print "======Android12 BPF Bypass by Ratoriku====="
+ui_print "======Flashable zip by @xzr467706992====="
+ui_print "======All credit to Erfan Abdi for bpf fix========"
+ui_print " "
+ui_print " "
+ui_print "Mounting /system"
+mkdir /system
+umount /system
+blockdev --setrw  /dev/block/bootdevice/by-name/system
+mount -t ext4 -o rw /dev/block/bootdevice/by-name/system /system
+system=
+if [ -f /system/system/build.prop ];then
+    system=/system/system
+else
+    system=/system
+fi
+ui_print " "
+ui_print "Applying patch..."
+mkdir $CACHE
+cd $CACHE
+unzip -o "$ZIPFILE"
+cp -f $CACHE/patch/netd $system/bin/netd
+chmod 755 $system/bin/netd
+chown 0:2000 $system/bin/netd
+chcon u:object_r:netd_exec:s0 $system/bin/netd
+rm -rf $system/etc/init/bpfloader.rc
+echo "bpf.progs_loaded=1" >> $system/product/etc/build.prop
+ui_print " "
+umount /system
+rm -rf $CACHE
+ui_print "Done..."
